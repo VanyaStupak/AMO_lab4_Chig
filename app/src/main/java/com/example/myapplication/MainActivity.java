@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -27,7 +28,7 @@ import java.util.stream.DoubleStream;
 public class MainActivity extends AppCompatActivity {
     public TextView result;
     private double a, b, accuracy;
-    private ArrayList<Entry> lineEntries1,  lineEntries2;
+    private ArrayList<Entry> lineEntries1, lineEntries2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,8 +39,9 @@ public class MainActivity extends AppCompatActivity {
         EditText ACCURACY = findViewById(R.id.enterAC);
         result = findViewById(R.id.textView7);
         Button count = findViewById(R.id.button);
-         Objects.requireNonNull(getSupportActionBar()).setTitle("AMO_lab4");
-
+        Objects.requireNonNull(getSupportActionBar()).setTitle("AMO_lab4");
+        getSupportActionBar().setBackgroundDrawable(
+                new ColorDrawable(Color.parseColor("#FF018786")));
         count.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -53,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
                 Double[] x = DoubleStream.iterate(a, n -> n + 0.1).limit((int) ((b - a) / 0.1) + 1).boxed().toArray(Double[]::new);
                 LinkedHashSet<Double> results = new LinkedHashSet<>();
                 for (int i = 1; i < x.length; i++) {
-                    Double temp = chordMethod(x[i - 1], x[i], accuracy, 1000);
+                    Double temp = tangentMethod(x[i - 1], x[i], accuracy, 1000);
                     if (temp != null) {
                         results.add(temp);
                     }
@@ -62,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
                 if (a >= b) {
                     result.setText("Нижня границя а має бути меньшою за верхню б");
                 } else if (results.isEmpty()) {
-                    result.setText("Метод хорд не гарантує збіжності на даному інтервалі");
+                    result.setText("Метод половинного ділення не гарантує збіжності на даному інтервалі.");
                 } else {
                     try {
                         result.setText(Arrays.toString(results.toArray()));
@@ -73,15 +75,15 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-       lineEntries1 = new ArrayList<Entry>();
-       lineEntries2 = new ArrayList<Entry>();
-        double[] funcLinesX = new double[40];
-        double[] funcLinesY = new double[40];
-        funcLinesX[0] = 0.1;
-        funcLinesY[0] = -1.05;
+        lineEntries1 = new ArrayList<Entry>();
+        lineEntries2 = new ArrayList<Entry>();
+        double[] funcLinesX = new double[48];
+        double[] funcLinesY = new double[48];
+        funcLinesX[0] = -7;
+        funcLinesY[0] = -405;
         for (int i = 1; i < funcLinesX.length; i++) {
-            funcLinesX[i] = funcLinesX[i - 1] + 0.2;
-            funcLinesY[i] = (2*Math.log10(funcLinesX[i]) - funcLinesX[i]/2 + 1);
+            funcLinesX[i] = funcLinesX[i - 1] + 0.3;
+            funcLinesY[i] = (Math.pow(funcLinesX[i], 3) + 8 * funcLinesX[i] - 6);
         }
         for (int i = 0; i < funcLinesX.length; i++) {
             lineEntries1.add(new Entry((float) funcLinesX[i], (float) funcLinesY[i]));
@@ -90,36 +92,36 @@ public class MainActivity extends AppCompatActivity {
             lineEntries2.add(new Entry((float) funcLinesX[i], 0));
         }
 
+
         drawLineChart1();
     }
 
-    public  double f(double x) {
-        return 2*Math.log10(x) - x/2 + 1;
+    public double f(double x) {
+        return Math.pow(x, 3) + 8 * x - 6;
     }
 
-    public Double chordMethod(Double a, Double b, Double tol, int maxIter) {
-        Double fa = f(a);
-        Double fb = f(b);
+    public Double tangentMethod(double a, double b, double eps, int maxIterations) {
+        int iterations = 0;
+        double x0 = a;
+        double x1 = b;
+        double fx0 = f(x0);
+        double fx1 = f(x1);
+        if (fx0 * fx1 >= 0) {
+            return null;
+        }
+        while (Math.abs(fx1) > eps && iterations < maxIterations) {
+            double x2 = x1 - fx1 * (x1 - x0) / (fx1 - fx0);
+            double fx2 = f(x2);
 
-        if (fa * fb >= 0) {
-          return null;
+            x0 = x1;
+            fx0 = fx1;
+            x1 = x2;
+            fx1 = fx2;
+
+            iterations++;
         }
 
-        for (int i = 0; i < maxIter; i++) {
-            Double c = (a * f(b) - b * f(a)) / (f(b) - f(a));
-            Double fc = f(c);
-            if (Math.abs(fc) < tol) {
-                return c;
-            }
-            if (fa * fc < 0) {
-                b = c;
-                fb = fc;
-            } else {
-                a = c;
-                fa = fc;
-            }
-        }
-        return null;
+        return x1;
     }
 
     private void drawLineChart1() {
@@ -128,9 +130,10 @@ public class MainActivity extends AppCompatActivity {
         List<Entry> lineEntries3 = lineEntries2;
         ArrayList<ILineDataSet> dataSets = new ArrayList<>();
         LineDataSet lineDataSet1 = new LineDataSet(lineEntries, "ФУНКЦІЯ");
-        LineDataSet lineDataSet2 = new LineDataSet(lineEntries3, "y=0");
+        LineDataSet lineDataSet2 = new LineDataSet(lineEntries3, "");
         dataSets.add(lineDataSet1);
         dataSets.add(lineDataSet2);
+
 
         lineDataSet1.setAxisDependency(YAxis.AxisDependency.LEFT);
         lineDataSet1.setLineWidth(2);
@@ -146,17 +149,18 @@ public class MainActivity extends AppCompatActivity {
         lineDataSet1.setValueTextColor(Color.DKGRAY);
 
         lineDataSet2.setAxisDependency(YAxis.AxisDependency.LEFT);
-        lineDataSet2.setLineWidth(2);
-        lineDataSet2.setColor(Color.GREEN);
-        lineDataSet2.setCircleColor(Color.GREEN);
+        lineDataSet2.setLineWidth(1.5f);
+        lineDataSet2.setColor(Color.BLACK);
+        lineDataSet2.setCircleColor(Color.BLACK);
         lineDataSet2.setDrawCircles(false);
         lineDataSet2.setCircleRadius(6);
         lineDataSet2.setCircleHoleRadius(3);
         lineDataSet2.setDrawHighlightIndicators(false);
-        lineDataSet2.setHighLightColor(Color.GREEN);
+        lineDataSet2.setHighLightColor(Color.BLACK);
         lineDataSet2.setValueTextSize(12);
         lineDataSet2.setDrawValues(false);
         lineDataSet2.setValueTextColor(Color.DKGRAY);
+
 
         LineData lineData = new LineData(dataSets);
         lineChart.getDescription().setText("f(x)");
@@ -165,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
         lineChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
         lineChart.animateY(1000);
         lineChart.getXAxis().setGranularityEnabled(true);
-        lineChart.getXAxis().setGranularity(0.5f);
+        lineChart.getXAxis().setGranularity(1.0f);
         lineChart.getXAxis().setLabelCount(lineDataSet1.getEntryCount());
         lineChart.setData(lineData);
     }
