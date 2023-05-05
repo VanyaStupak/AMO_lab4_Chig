@@ -29,7 +29,6 @@ public class MainActivity extends AppCompatActivity {
     public TextView result;
     private double a, b, accuracy;
     private ArrayList<Entry> lineEntries1, lineEntries2;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,30 +40,32 @@ public class MainActivity extends AppCompatActivity {
         Button count = findViewById(R.id.button);
         Objects.requireNonNull(getSupportActionBar()).setTitle("AMO_lab4");
         getSupportActionBar().setBackgroundDrawable(
-                new ColorDrawable(Color.parseColor("#FF018786")));
+                new ColorDrawable(Color.parseColor("#8F1BA3")));
         count.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 try {
                     a = Double.parseDouble(String.valueOf(A.getText()));
                     b = Double.parseDouble(String.valueOf(B.getText()));
-                    accuracy = Double.parseDouble(String.valueOf(ACCURACY.getText()));
+                    accuracy =
+                            Double.parseDouble(String.valueOf(ACCURACY.getText()));
                 } catch (NumberFormatException numberFormatException) {
                     result.setText("Введіть коректні числа");
                 }
-                Double[] x = DoubleStream.iterate(a, n -> n + 0.1).limit((int) ((b - a) / 0.1) + 1).boxed().toArray(Double[]::new);
+                Double[] x = DoubleStream.iterate(a, n -> n + 0.1).limit((int)
+                        ((b - a) / 0.1) + 1).boxed().toArray(Double[]::new);
                 LinkedHashSet<Double> results = new LinkedHashSet<>();
                 for (int i = 1; i < x.length; i++) {
-                    Double temp = tangentMethod(x[i - 1], x[i], accuracy, 1000);
+                    Double temp = chordMethod(x[i - 1], x[i], accuracy, 1000);
                     if (temp != null) {
                         results.add(temp);
                     }
                 }
                 results.stream().sorted();
                 if (a >= b) {
-                    result.setText("Нижня границя а має бути меньшою за верхню б");
+                    result.setText("Нижня границя а має бути меньшою за верхню");
                 } else if (results.isEmpty()) {
-                    result.setText("Метод половинного ділення не гарантує збіжності на даному інтервалі.");
+                    result.setText("Метод хорд не гарантує збіжності на даному інтервалі");
                 } else {
                     try {
                         result.setText(Arrays.toString(results.toArray()));
@@ -74,54 +75,49 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-
         lineEntries1 = new ArrayList<Entry>();
         lineEntries2 = new ArrayList<Entry>();
-        double[] funcLinesX = new double[48];
-        double[] funcLinesY = new double[48];
-        funcLinesX[0] = -7;
-        funcLinesY[0] = -405;
+        double[] funcLinesX = new double[24];
+        double[] funcLinesY = new double[24];
+        funcLinesX[0] = -3;
+        funcLinesY[0] = -2.01;
         for (int i = 1; i < funcLinesX.length; i++) {
             funcLinesX[i] = funcLinesX[i - 1] + 0.3;
-            funcLinesY[i] = (Math.pow(funcLinesX[i], 3) + 8 * funcLinesX[i] - 6);
+            funcLinesY[i] = funcLinesX[i] - Math.cos(funcLinesX[i]);
         }
         for (int i = 0; i < funcLinesX.length; i++) {
-            lineEntries1.add(new Entry((float) funcLinesX[i], (float) funcLinesY[i]));
+            lineEntries1.add(new Entry((float) funcLinesX[i], (float)
+                    funcLinesY[i]));
         }
         for (int i = 0; i < funcLinesX.length; i++) {
             lineEntries2.add(new Entry((float) funcLinesX[i], 0));
         }
-
-
         drawLineChart1();
     }
-
     public double f(double x) {
-        return Math.pow(x, 3) + 8 * x - 6;
+        return x-Math.cos(x);
     }
-
-    public Double tangentMethod(double a, double b, double eps, int maxIterations) {
-        int iterations = 0;
-        double x0 = a;
-        double x1 = b;
-        double fx0 = f(x0);
-        double fx1 = f(x1);
-        if (fx0 * fx1 >= 0) {
+    public Double chordMethod(Double a, Double b, Double tol, int maxIter) {
+        Double fa = f(a);
+        Double fb = f(b);
+        if (fa * fb >= 0) {
             return null;
         }
-        while (Math.abs(fx1) > eps && iterations < maxIterations) {
-            double x2 = x1 - fx1 * (x1 - x0) / (fx1 - fx0);
-            double fx2 = f(x2);
-
-            x0 = x1;
-            fx0 = fx1;
-            x1 = x2;
-            fx1 = fx2;
-
-            iterations++;
+        for (int i = 0; i < maxIter; i++) {
+            Double c = (a * f(b) - b * f(a)) / (f(b) - f(a));
+            Double fc = f(c);
+            if (Math.abs(fc) < tol) {
+                return c;
+            }
+            if (fa * fc < 0) {
+                b = c;
+                fb = fc;
+            } else {
+                a = c;
+                fa = fc;
+            }
         }
-
-        return x1;
+        return null;
     }
 
     private void drawLineChart1() {
@@ -137,13 +133,13 @@ public class MainActivity extends AppCompatActivity {
 
         lineDataSet1.setAxisDependency(YAxis.AxisDependency.LEFT);
         lineDataSet1.setLineWidth(2);
-        lineDataSet1.setColor(Color.BLUE);
-        lineDataSet1.setCircleColor(Color.BLUE);
+        lineDataSet1.setColor(Color.parseColor("#8F1BA3"));
+        lineDataSet1.setCircleColor(Color.parseColor("#8F1BA3"));
         lineDataSet1.setDrawCircles(false);
         lineDataSet1.setCircleRadius(6);
         lineDataSet1.setCircleHoleRadius(3);
         lineDataSet1.setDrawHighlightIndicators(false);
-        lineDataSet1.setHighLightColor(Color.BLUE);
+        lineDataSet1.setHighLightColor(Color.parseColor("#8F1BA3"));
         lineDataSet1.setValueTextSize(12);
         lineDataSet1.setDrawValues(false);
         lineDataSet1.setValueTextColor(Color.DKGRAY);

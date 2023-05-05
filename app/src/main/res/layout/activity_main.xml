@@ -137,7 +137,7 @@
 
     <Button
         android:id="@+id/button"
-        android:backgroundTint="@color/teal_700"
+        android:backgroundTint="#8F1BA3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="44dp"
